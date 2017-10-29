@@ -1,0 +1,16 @@
+digraph g{
+	rankdir=LR;
+	size="8.5"
+	node [shape = circle];
+	0 -> 1 [label = "a"]
+	1 -> 2 [label = "b"]
+	2 -> 3 [label = "c"]
+	2 -> 4 [label = "d"]
+	2 -> 5 [label = "e"]
+	3 -> 3 [label = "c"]
+	3 -> 4 [label = "d"]
+	3 -> 5 [label = "e"]
+	4 -> 3 [label = "c"]
+	4 -> 4 [label = "d"]
+	4 -> 5 [label = "e"]
+}
