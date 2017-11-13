@@ -1,6 +1,6 @@
 #include<stdlib.h>
 #include<stdio.h>
-#include"nfa_struct.h"
+#include"fa_struct.h"
 
 //  int main(){
 //      NFA *e1 = construct_single_char_NFA('a');
@@ -85,7 +85,46 @@ alternation(NFA *e1 , NFA *e2){
     nfa->edges[edge_sum+3]->character = EPSILON;
 
     nfa->edge_num = edge_sum+4;
+    free(e1->edges);
+    free(e2->edges);
+    free(e1);
+    free(e2);
+    return nfa;
+}
+NFA *
+pattern_alternation(NFA *e1, NFA *e2){
+    NFA *nfa;
+    INIT_NFA(nfa);
+    nfa->start_state->id = static_nstate_id++;
+    nfa->start_state->transition = EPSILON; 
+    nfa->start_state->outp1 = e1->start_state;
+    nfa->start_state->outp2 = e2->start_state;
 
+    nfa->accept_state = NULL;
+
+    int edge_sum = e1->edge_num + e2->edge_num;
+    int i;
+    for(i=0;i<e1->edge_num;i++)
+        nfa->edges[i] = e1->edges[i];
+    for(i=0;i<e2->edge_num;i++)
+        nfa->edges[i+e1->edge_num] = e2->edges[i];
+    
+    nfa->edges[edge_sum] = new_NFA_edge();
+    nfa->edges[edge_sum]->from_state = nfa->start_state->id;
+    nfa->edges[edge_sum]->to_state = nfa->start_state->outp1->id;
+    nfa->edges[edge_sum]->character = EPSILON;
+
+    nfa->edges[edge_sum+1] = new_NFA_edge();
+    nfa->edges[edge_sum+1]->from_state = nfa->start_state->id;
+    nfa->edges[edge_sum+1]->to_state = nfa->start_state->outp2->id;
+    nfa->edges[edge_sum+1]->character = EPSILON;
+
+    nfa->edge_num = edge_sum+2;
+    
+    //free(e1->edges);
+    //free(e2->edges);
+    //free(e1);
+    //free(e2);
     return nfa;
 }
 
@@ -116,6 +155,10 @@ concatenation(NFA *n1 , NFA *n2){
 
     nfa->edge_num += 1;
 
+    free(n1->edges);
+    free(n2->edges);
+    free(n1);
+    free(n2);
     return nfa;
 }
 
@@ -165,6 +208,9 @@ kleene(NFA *n){
     kle->edges[kle->edge_num+3]->character = EPSILON;
 
     kle->edge_num += 4;
+    
+    free(n->edges);
+    free(n);
     return kle;
 }
 
@@ -177,7 +223,7 @@ epsilon_closure(Configuration *active_states){
     int state_index;
     int origin_size = active_states->size;
     for(state_index = 0; state_index < origin_size; state_index++){
-        NFAstate *worklist[100];
+        NFAstate **worklist = (NFAstate**)malloc(5000*sizeof(NFAstate*));
         worklist[0] = active_states->states[state_index];  /*simulate a queue*/
         int worklist_size = 1;
         int worklist_cur_index = 0;
@@ -198,8 +244,9 @@ epsilon_closure(Configuration *active_states){
             worklist_size--;
             worklist_cur_index++;
         }
+        free(worklist);
     }
-
+    
     return active_states;
 }
 
@@ -308,16 +355,17 @@ in_configuration_set(Configuration *q, ConfigurationSet *Q){
     }
     return 0;
 }
-
-bool 
-is_accept(Configuration *q){
+int  
+get_class_num(Configuration *q){
     if(q==NULL) return 0;
     int i;
+    int max=128;
     for(i=0;i<q->size;i++){
-        if(q->states[i]->transition==NONE)
-            return 1;
+        if(q->states[i]->transition>NONE && q->states[i]->transition>max)
+            max = q->states[i]->transition;
     }
-    return 0;
+    if(max>NONE) return max; 
+    else return 0;
 }
 
 /*================================================================*/
@@ -348,8 +396,48 @@ is_configuration_equal(Configuration *q1, Configuration *q2){
     int i;
     for(i=0;i<Q->size;i++){
         if(is_configuration_equal(*q,Q->q[i])){
+            free_Configuration(*q);
             *q = Q->q[i];
             return;
         }
     }
- }
+}
+
+Configuration *new_Configuration(){
+    Configuration *res = (Configuration*)malloc(sizeof(Configuration));
+    res->states = (NFAstate**)malloc(6000*sizeof(NFAstate*));
+    return res;
+}
+
+ConfigurationSet *new_ConfigurationSet(){
+    ConfigurationSet *res = (ConfigurationSet*)malloc(sizeof(ConfigurationSet));
+    res->q = (Configuration **)malloc(6000*sizeof(Configuration*));
+    res->edges = (DFA_edge **)malloc(6000*sizeof(DFA_edge*));
+    int i;
+    res->T = (Configuration ***)malloc(6000*sizeof(Configuration**));
+    for(i=0;i<6000;i++){
+        res->T[i] = (Configuration **)malloc(128*sizeof(Configuration *));
+    }
+    return res;
+}
+
+NFAstate_list *new_NFAstate_list(){
+    NFAstate_list *res = (NFAstate_list*)malloc(sizeof(NFAstate_list));
+    res->content = (NFAstate**)malloc(5000*sizeof(NFAstate*));
+    res->transaction = (NFAstate_list**)malloc(128*sizeof(NFAstate_list*));
+    return res;
+}
+
+void free_Configuration(Configuration *q){
+    free(q->states);
+    free(q);
+}
+
+void free_conf_set(ConfigurationSet* dfa){
+    int i;
+    for(i=0;i<1000;i++)
+        free(dfa->T[i]);
+    free(dfa->T);
+    free(dfa->q);
+    free(dfa->edges);
+}

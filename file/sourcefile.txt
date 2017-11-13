@@ -1,1 +1,11 @@
-abcde
+# include < fdsf >
+int main ( ) {
+    int plus = 16 + 32 ; 
+    int minus = 342 - 5322 ;
+    int sdfa = 324 * 98 ;
+    int fsaf = 97 / 89 ;
+    int qwer = 986 % 239 ;
+    double ff = 88.99 ;
+    a > b ;
+    a < b ;
+}
