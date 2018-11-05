@@ -1,5 +1,6 @@
 # Compiler
 This is a Compiler project. Now I just finish the hand craft scanner.
+grammar analysis part isn't here
 
 # Lexical analysis
 
